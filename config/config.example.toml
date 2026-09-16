@@ -1,0 +1,9 @@
+# Local configuration template.
+# Generate config/config.toml from this file and fill in real values.
+# config/config.toml is machine-specific and is never committed (see config/.gitignore).
+
+[paths]
+# Absolute path to the root directory for private data (required).
+# Use a single-quoted TOML literal string so Windows backslashes are kept as-is,
+# e.g. 'D:\ai-career\private'.
+private_data_root = ''

@@ -1,0 +1,5 @@
+# Allowlist: ignore everything here except templates.
+# A forgotten rule then defaults to "not committed" rather than "committed".
+*
+!.gitignore
+!*.example.toml

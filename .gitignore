@@ -1,0 +1,2 @@
+# Private data root (config/config.toml -> paths.private_data_root) — never commit
+/private/
