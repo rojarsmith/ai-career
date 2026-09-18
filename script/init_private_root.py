@@ -25,6 +25,11 @@ CONFIG_REL = Path("config") / "config.toml"
 EXAMPLE_REL = Path("config") / "config.example.toml"
 ACCOUNT_DIRNAME = "account"
 GUARD_TEXT = "# Never track anything under the private data root.\n*\n"
+MARKER_NAME = ".ai-career-private-root"
+MARKER_TEXT = (
+    "This directory is an ai-career private data root. Files in it are private,\n"
+    "and files under account/ are credential files (see rules/common.toml).\n"
+)
 
 
 def die(message: str, hint: str | None = None) -> None:
@@ -155,6 +160,24 @@ def ensure_guard(data_root: Path, dry_run: bool) -> str:
     return "created"
 
 
+def ensure_marker(data_root: Path, dry_run: bool) -> str:
+    """Mark the directory as a private data root.
+
+    The marker keeps the directory recognizable as private after the config changes
+    or breaks: rules/common.toml treats any directory holding it as a private area.
+    """
+    marker = data_root / MARKER_NAME
+    if marker.is_file():
+        return "exists"
+    if dry_run:
+        return "would create"
+    try:
+        marker.write_text(MARKER_TEXT, encoding="utf-8")
+    except OSError as exc:
+        die(f"could not write {marker}: {exc}")
+    return "created"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -183,8 +206,18 @@ def main() -> int:
     in_repo = (root / ".git").exists()
     inside_repo = in_repo and (data_root == root or data_root.is_relative_to(root))
 
-    if data_root == root:
-        die("paths.private_data_root must not be the repository root itself")
+    # A root equal to the repository, or containing it, would put the whole public
+    # repository inside the private area.
+    if root == data_root or root.is_relative_to(data_root):
+        die("paths.private_data_root must not be the repository or a directory that contains it")
+
+    # Everything under an account/ directory is a credential file (rules/common.toml),
+    # so a root there would make the guard and marker files credential files too.
+    if any(part.lower() == ACCOUNT_DIRNAME for part in data_root.parts):
+        die(
+            f"paths.private_data_root must not be, or be inside, a directory named '{ACCOUNT_DIRNAME}': {data_root}",
+            "account directories hold only credential files",
+        )
 
     # The private data root holds credentials and the repo is public, so a root
     # inside the working tree must already be ignored before anything is created.
@@ -198,11 +231,13 @@ def main() -> int:
     root_state = ensure_dir(data_root, args.dry_run)
     account_state = ensure_dir(account_dir, args.dry_run)
     guard_state = ensure_guard(data_root, args.dry_run)
+    marker_state = ensure_marker(data_root, args.dry_run)
 
     location = "inside the repository" if inside_repo else "outside the repository"
     print(f"private_data_root  {data_root}  [{root_state}] ({location})")
     print(f"account directory  {account_dir}  [{account_state}]")
     print(f"ignore guard       {data_root / '.gitignore'}  [{guard_state}]")
+    print(f"root marker        {data_root / MARKER_NAME}  [{marker_state}]")
     print()
     print("Put credential files in the account directory yourself.")
     print("This script does not create or read them, and they are stored unencrypted")

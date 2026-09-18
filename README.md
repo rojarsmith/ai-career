@@ -38,6 +38,7 @@ It creates:
 | `<private_data_root>\` | Root for all private data |
 | `<private_data_root>\account\` | Credential files (usernames and passwords) |
 | `<private_data_root>\.gitignore` | Ignores everything in the root, as a second guard |
+| `<private_data_root>\.ai-career-private-root` | Marks the folder as private, so the rules still protect it if the config later changes |
 
 - Safe to run repeatedly: it only creates what is missing.
 - `/ai-career initial --dry-run` shows what would be created without changing anything.

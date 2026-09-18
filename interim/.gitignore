@@ -1,0 +1,4 @@
+# Temporary working files for the whole project.
+# The directory ships empty on clone; nothing placed in it is ever tracked.
+*
+!.gitignore
